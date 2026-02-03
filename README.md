@@ -1,2 +1,2 @@
-# multiway-alignment
-Multi-Way Representation Alignment
+# Multi-Way Representation Alignment
+Code will be released soon!
