@@ -20,8 +20,6 @@ and create the virtual environment with `uv`
     uv add --editable ../latentis/
 ```
 
-Individual scripts can be found in `src/scripts/exps/`.
-
 ## 🗂️ Datasets
 
 Apart from the datasets present in latentis, the remaining datasets can be downloaded from here:
@@ -40,11 +38,12 @@ Apart from the datasets present in latentis, the remaining datasets can be downl
 ├── src/                     # Source directory
 │   ├── cycloreps/  # Main package
 │   │   ├── __init__.py
-│   │   ├── main.py
 ├── pyproject.toml           # Package configuration
 ├── README.md                # This file
 └── LICENSE                  # License information
 ```
+
+Individual scripts can be found in `src/scripts/exps/`.
 
 ---
 
