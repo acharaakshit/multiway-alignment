@@ -1,0 +1,11 @@
+ortho:
+  max_iter: 100
+  tol: 1e-8
+procrustes:
+  max_iter: 100
+  tol: 1e-8
+reconstruction:
+  max_iter: 1000
+  tol: 1e-8
+  lr: 1
+  ortho_regs: [0.1, 0.2, 0.5, 1.0]
