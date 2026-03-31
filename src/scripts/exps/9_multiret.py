@@ -143,32 +143,54 @@ def compute_and_save(
         X_A = space_tensors["train"][encoder].to(dtype)
         X_B = space_tensors["train"][other_encoder].to(dtype)
 
-        x_tgt_mu = space_tensors["train"][other_encoder].mean(0, keepdim=True)
-        x_tgt_sig = space_tensors["train"][other_encoder].std(0, unbiased=False, keepdim=True) + 1e-8
+        x_A_mu = X_A.mean(0, keepdim=True)
+        x_A_sig = X_A.std(0, unbiased=False, keepdim=True) + 1e-8
+        x_B_mu = X_B.mean(0, keepdim=True)
+        x_B_sig = X_B.std(0, unbiased=False, keepdim=True) + 1e-8
 
-        translator_ortho = Translator(
+        translator_ortho_ab = Translator(
             aligner=MatrixAligner(name="ortho", align_fn_state=svd_align_state),
             x_transform=StandardScaling(),
             y_transform=StandardScaling(),
             dim_matcher=ZeroPadding(),
         )
+        translator_ortho_ab.fit(x=X_A, y=X_B)
 
-        translator_ortho.fit(x=X_A.to(dtype), y=X_B.to(dtype))
+        translator_ortho_ba = Translator(
+            aligner=MatrixAligner(name="ortho", align_fn_state=svd_align_state),
+            x_transform=StandardScaling(),
+            y_transform=StandardScaling(),
+            dim_matcher=ZeroPadding(),
+        )
+        translator_ortho_ba.fit(x=X_B, y=X_A)
 
         x_A_test = space_tensors["test"][encoder].to(dtype)
         x_B_test = space_tensors["test"][other_encoder].to(dtype)
 
-        x_A_transformed = z(X=translator_ortho.transform(x_A_test)["x"], mu=x_tgt_mu, sig=x_tgt_sig)
+        x_A_transformed = z(
+            X=translator_ortho_ab.transform(x_A_test)["x"],
+            mu=x_B_mu,
+            sig=x_B_sig,
+        )
+        x_B_transformed = z(
+            X=translator_ortho_ba.transform(x_B_test)["x"],
+            mu=x_A_mu,
+            sig=x_A_sig,
+        )
 
-        sim = ensure_normalised(x_A_transformed) @ ensure_normalised(z(x_B_test, mu=x_tgt_mu, sig=x_tgt_sig)).T
-        print(sim.shape)
+        sim_ab = ensure_normalised(x_A_transformed) @ ensure_normalised(z(x_B_test, mu=x_B_mu, sig=x_B_sig)).T
+        sim_ba = ensure_normalised(x_B_transformed) @ ensure_normalised(z(x_A_test, mu=x_A_mu, sig=x_A_sig)).T
+        print(sim_ab.shape)
 
-        scores = hits_at_k(sim, K=(1,5,10))
+        scores = hits_at_k(sim_ab, K=(1,5,10))
+        reverse_scores = hits_at_k(sim_ba, K=(1,5,10))
         print("Hits@1/5/10:", scores)
-        print("MRR:", mrr(sim))
+        print("MRR:", mrr(sim_ab))
+        print("Reverse Hits@1/5/10:", reverse_scores)
+        print("Reverse MRR:", mrr(sim_ba))
 
         retrieval_metrics[encoder][other_encoder]['pairwise'] = scores[1]
-        retrieval_metrics[other_encoder][encoder]['pairwise'] = scores[1]
+        retrieval_metrics[other_encoder][encoder]['pairwise'] = reverse_scores[1]
 
     # Generalized Procustes: universe
     translator_gp = GeneralizedProcrustesTranslator(
@@ -207,11 +229,12 @@ def compute_and_save(
         print(sim.shape)
 
         scores = hits_at_k(sim, K=(1,5,10))
+        reverse_scores = hits_at_k(sim.T, K=(1,5,10))
         print("Hits@1/5/10:", scores)
         print("MRR:", mrr(sim))
 
         retrieval_metrics[encoder][other_encoder]['cycle-cons-gp'] = scores[1]
-        retrieval_metrics[other_encoder][encoder]['cycle-cons-gp'] = scores[1]
+        retrieval_metrics[other_encoder][encoder]['cycle-cons-gp'] = reverse_scores[1]
 
         print(f'Comparing {encoder} to {other_encoder} using GP++ in-universe')
 
@@ -227,10 +250,11 @@ def compute_and_save(
 
         sim = ensure_normalised(X_univ) @ ensure_normalised(Y_univ).T
         scores = hits_at_k(sim, K=(1,5,10))
+        reverse_scores = hits_at_k(sim.T, K=(1,5,10))
         print("Hits@1/5/10:", scores)
         print("MRR:", mrr(sim))
         retrieval_metrics[encoder][other_encoder]['cycle-cons-gp++'] = scores[1]
-        retrieval_metrics[other_encoder][encoder]['cycle-cons-gp++'] = scores[1]
+        retrieval_metrics[other_encoder][encoder]['cycle-cons-gp++'] = reverse_scores[1]
 
     # Generalized Procustes: universe
     translator_gcca = GeneralizedCCATranslator(device="cpu")
@@ -257,11 +281,12 @@ def compute_and_save(
         print(sim.shape)
 
         scores = hits_at_k(sim, K=(1,5,10))
+        reverse_scores = hits_at_k(sim.T, K=(1,5,10))
         print("Hits@1/5/10:", scores)
         print("MRR:", mrr(sim))
 
         retrieval_metrics[encoder][other_encoder]['gcca'] = scores[1]
-        retrieval_metrics[other_encoder][encoder]['gcca'] = scores[1]
+        retrieval_metrics[other_encoder][encoder]['gcca'] = reverse_scores[1]
 
     with open(
         PROJECT_ROOT / "results" / f"{run_name}.json", "w"
