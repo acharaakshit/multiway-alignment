@@ -26,7 +26,6 @@ from latentis.transform.translate.aligner import MatrixAligner, Translator
 from latentis.transform.base import StandardScaling
 from latentis.transform.dim_matcher import ZeroPadding
 from latentis.transform.translate.functional import svd_align_state
-from scripts.exp_utils import pca_match
 import hashlib
 import logging
 
@@ -358,7 +357,7 @@ def add_model(spaces, translator, encoder_name_to_add, space_to_add, device):
     universe_spaces_added["train"][encoder_name_to_add] = space_to_add["train"]
     universe_spaces_added["validation"][encoder_name_to_add] = space_to_add["validation"]
     universe_spaces_added["test"][encoder_name_to_add] = space_to_add["test"]
-    # now let's return it for proobing -- btw isn't Messi the best?
+    # Return the augmented spaces for probing.
 
     return universe_spaces_added
 
@@ -387,8 +386,6 @@ def main(cfg: omegaconf.DictConfig):
     seed_everything(cfg.experiment.seed)
     device = "cpu"
     dataset_name = cfg.experiment.dataset
-    
-    assert cfg.experiment.pca_enabled in [True, False]
 
     data: DatasetView = (
             datasets_lazy_load[dataset_name].build().run()["dataset_view"]
@@ -541,9 +538,6 @@ def main(cfg: omegaconf.DictConfig):
                         for split in splits
                     }
 
-                    pca_applied = False
-                    pca_enabled_string = "pca_disabled"
-
                     # define the dictionary for storing the results
                     results_init = {
                         "INPUT": {},
@@ -603,7 +597,6 @@ def main(cfg: omegaconf.DictConfig):
                         labels=labels,
                         results=results,
                         alignment="generalised_procrustes",
-                        pca_applied=pca_applied,
                         subselect_indices=embs,
                         device=device,
                     )
@@ -614,7 +607,6 @@ def main(cfg: omegaconf.DictConfig):
                         labels=labels,
                         results=results,
                         alignment="generalised_procrustes_gc",
-                        pca_applied=pca_applied,
                         subselect_indices=embs,
                         gc_rescale=False,
                         device=device,
@@ -625,7 +617,6 @@ def main(cfg: omegaconf.DictConfig):
                         labels=labels,
                         results=results,
                         alignment="generalised_procrustes_gc_rescale",
-                        pca_applied=pca_applied,
                         subselect_indices=embs,
                         gc_rescale=True,
                         device=device,
@@ -659,7 +650,7 @@ def main(cfg: omegaconf.DictConfig):
                     n_spaces = str(len(list(spaces["train"].keys())))
                     logging.info(added_model_increase_exp)
                     df.to_csv(
-                        Path(out_dir) / f"{experiment_name}_{mode}_{pca_enabled_string}_{dataset_name}_{sample_count}_{n_spaces}_{added_model_increase_exp}.csv"
+                        Path(out_dir) / f"{experiment_name}_{mode}_{dataset_name}_{sample_count}_{n_spaces}_{added_model_increase_exp}.csv"
                     )
                     logging.info("\nClassification Results:\n")
                     logging.info(df.to_markdown(index=False))
@@ -915,7 +906,6 @@ def main(cfg: omegaconf.DictConfig):
                                 labels=labels,
                                 results=added_results,
                                 alignment="generalised_procrustes",
-                                pca_applied=pca_applied,
                                 device=device,
                         )
 
@@ -925,14 +915,13 @@ def main(cfg: omegaconf.DictConfig):
                                 labels=labels,
                                 results=added_results,
                                 alignment="generalised_procrustes_gc",
-                                pca_applied=pca_applied,
                                 device=device,
                         )
 
                         enc_name_for_file = encoder_name_to_add.replace("/", "_")
                         added_df = pd.DataFrame(prepare_results(results=added_results))
                         added_df.to_csv(
-                            Path(out_dir) / f"addition_{experiment_name}_{mode}_{pca_enabled_string}_{dataset_name}_{sample_count}_{n_spaces}_{enc_name_for_file}.csv"
+                            Path(out_dir) / f"addition_{experiment_name}_{mode}_{dataset_name}_{sample_count}_{n_spaces}_{enc_name_for_file}.csv"
                         )
 
 
