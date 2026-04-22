@@ -27,7 +27,7 @@ ENCODER_NAMES = [
     "intfloat/e5-base-v2",
 ]
 SPLITS = ["train", "test"]
-DEVICE = "cuda"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 EMBED_DATASET = True
 EMBED_BATCH_SIZE = 1024
 SEED = 42

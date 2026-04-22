@@ -261,6 +261,9 @@ def main():
     n_clusters_cfg = cfg.dataset.n_clusters
     n_seeds = int(cfg.runtime.n_seeds)
     device = cfg.runtime.device
+    if device == "cuda" and not torch.cuda.is_available():
+        logger.warning("CUDA requested but unavailable; falling back to CPU.")
+        device = "cpu"
     global_seed = int(cfg.runtime.global_seed)
     embed_dataset_flag = bool(cfg.dataset.embed_dataset)
     embed_feature_cfg = cfg.dataset.embed_feature
@@ -380,7 +383,7 @@ def main():
     gpa_space_map = to_universe_map(translator_gpa, spaces_eval)
     gcca_space_map = to_universe_map(translator_gcca, spaces_eval)
 
-    results_dir = Path("results")
+    results_dir = Path(cfg.paths.results_dir)
     results_dir.mkdir(parents=True, exist_ok=True)
     csv_path = results_dir / f"clustering_{dataset_name}.csv"
 
