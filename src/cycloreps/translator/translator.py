@@ -135,7 +135,11 @@ class MultiSpaceBase(Estimator):
 
     # ---------- z-score ----------
     def _zscore(self, x: torch.Tensor, *, name: str) -> torch.Tensor:
-        return (x - self.means[name]) / (self.stds[name] + 1e-8)
+        mean = self.means[name].to(device=x.device, dtype=x.dtype)
+        std = self.stds[name].to(device=x.device, dtype=x.dtype)
+        return (x - mean) / (std + 1e-8)
 
     def _un_zscore(self, z: torch.Tensor, *, name: str) -> torch.Tensor:
-        return z * self.stds[name] + self.means[name]
+        mean = self.means[name].to(device=z.device, dtype=z.dtype)
+        std = self.stds[name].to(device=z.device, dtype=z.dtype)
+        return z * std + mean
