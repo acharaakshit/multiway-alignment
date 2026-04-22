@@ -16,6 +16,7 @@ from latentis.transform.translate.functional import svd_align_state
 from cycloreps.translator.gpa import GeneralizedProcrustesTranslator
 from cycloreps.translator.gcca import GeneralizedCCATranslator
 from scripts.exp_utils import pca_match, z, ensure_normalised
+from cycloreps.utils.utils import seed_everything
 import logging 
 
 logger = logging.getLogger(__name__)
@@ -192,7 +193,7 @@ def compute_and_save(
         retrieval_metrics[encoder][other_encoder]['pairwise'] = scores[1]
         retrieval_metrics[other_encoder][encoder]['pairwise'] = reverse_scores[1]
 
-    # Generalized Procustes: universe
+    # Generalized Procrustes: universe
     translator_gp = GeneralizedProcrustesTranslator(
         max_iter=align_cfg.procrustes.max_iter,
         tol=align_cfg.procrustes.tol,
@@ -256,7 +257,7 @@ def compute_and_save(
         retrieval_metrics[encoder][other_encoder]['cycle-cons-gp++'] = scores[1]
         retrieval_metrics[other_encoder][encoder]['cycle-cons-gp++'] = reverse_scores[1]
 
-    # Generalized Procustes: universe
+    # Generalized Procrustes: universe
     translator_gcca = GeneralizedCCATranslator(device="cpu")
     gcca_tensor_spaces = {split: space_tensors[split] for split in splits}
     translator_gcca.fit(gcca_tensor_spaces['train'])
@@ -288,13 +289,14 @@ def compute_and_save(
         retrieval_metrics[encoder][other_encoder]['gcca'] = scores[1]
         retrieval_metrics[other_encoder][encoder]['gcca'] = reverse_scores[1]
 
-    with open(
-        PROJECT_ROOT / "results" / f"{run_name}.json", "w"
-    ) as f:
+    out_path = PROJECT_ROOT / "results" / f"{run_name}.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w") as f:
         json.dump(retrieval_metrics, f, indent=4)
 
 @hydra.main(config_path=str(PROJECT_ROOT / "config"), config_name="9_multiret.yaml", version_base=None)
 def main(cfg: omegaconf.DictConfig):
+    seed_everything(int(cfg.seed) if "seed" in cfg else 42)
     dataset_name = cfg.dataset_name.split("/")[-1]
     encoder_to_lang = cfg.encoder_to_lang
     encoder_names = list(encoder_to_lang.keys())
