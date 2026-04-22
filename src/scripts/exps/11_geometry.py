@@ -109,7 +109,7 @@ def embed_spaces(
 
 
 @torch.no_grad()
-def drift_stats(u_hat: torch.Tensor, u_tilde: torch.Tensor):
+def drift_stats_function(u_hat: torch.Tensor, u_tilde: torch.Tensor):
     cos = torch.nn.functional.cosine_similarity(u_tilde, u_hat, dim=1)
     drift = 1.0 - cos
     return {
@@ -134,7 +134,7 @@ def geometry_metrics(
         # geometry corrected transformation
         u_tilde = translator._to_universe_impl(z, src=name, use_gc=True)
 
-        d = drift_stats(u_hat, u_tilde)
+        d = drift_stats_function(u_hat, u_tilde)
         drift_stats["mean"].append(d["mean"])
         drift_stats["median"].append(d["median"])
         drift_stats["p95"].append(d["p95"])
