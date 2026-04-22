@@ -13,6 +13,8 @@ from latentis.nn.encoders import TextHFEncoder
 from pathlib import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+DATA_DIR = Path(os.environ["DATA_PATH"])
+INSTANCE_IDS_PATH = DATA_DIR / "ted_multi_instance_ids.pkl"
 ds = datasets.load_dataset("neulab/ted_multi")
 print(ds["train"][0]["translations"]["language"][4], ds["train"][0]["translations"]["translation"][4])
 print(ds["train"][0]["translations"]["language"][5], ds["train"][0]["translations"]["translation"][5])
@@ -101,14 +103,14 @@ test_instance_ids = instance_ids[split_idx:]
 print(f"Number of training instances: {len(train_instance_ids)}")
 print(f"Number of test instances: {len(test_instance_ids)}")
 
-with open("/some/path/ted_multi_instance_ids.pkl", "wb") as f:
+with open(INSTANCE_IDS_PATH, "wb") as f:
     pickle.dump({
         "train": train_instance_ids,
         "test": test_instance_ids
     }, f)
 
 
-with open("/some/path/ted_multi_instance_ids.pkl", "rb") as f:
+with open(INSTANCE_IDS_PATH, "rb") as f:
     instance_ids = pickle.load(f)
 
 train_instance_ids = instance_ids["train"]
@@ -119,7 +121,6 @@ print(f"Number of test instances: {len(test_instance_ids)}")
 
 num_samples = None
 feature_name = "translations"
-DATA_DIR = Path("/some/path/")
 
 for lang, encoder_name in encoder_map.items():
     print(f"Processing language: {lang} with encoder: {encoder_name}")
@@ -166,7 +167,6 @@ for lang, encoder_name in encoder_map.items():
         )
 
         task.run()
-
 
 
 
