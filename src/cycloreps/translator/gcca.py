@@ -29,10 +29,10 @@ class GeneralizedCCATranslator(MultiSpaceBase):
         self.T_out.clear()
     
     def _to_universe_impl(self, z: torch.Tensor, *, src: str) -> torch.Tensor:
-        return z @ self.Q_out[src]
+        return z @ self.Q_out[src].to(z.device, z.dtype)
 
     def _from_universe_impl(self, u: torch.Tensor, *, tgt: str) -> torch.Tensor:
-        return u @ self.Q_out[tgt].T
+        return u @ self.Q_out[tgt].to(u.device, u.dtype).T
 
     def _pairwise_map_impl(self, src: str, tgt: str) -> torch.Tensor:
         return self.Q_out[src] @ self.Q_out[tgt].T
