@@ -202,6 +202,8 @@ class GeneralizedProcrustesTranslator(MultiSpaceBase):
         if use_gc is None:
             use_gc = self._use_gc_override
         if gc_rescale is None:
+            gc_rescale = self._gc_rescale_override
+        if gc_rescale is None:
             gc_rescale = False
         want_gc = self.gc_enabled if use_gc is None else bool(use_gc)
         # corrected should have been run
