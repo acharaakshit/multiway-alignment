@@ -91,6 +91,9 @@ def move_translator_to_device(translator, device):
                 {k: v.to(device) for k, v in getattr(translator, attr).items()},
             )
 
+    if getattr(translator, "_corrector", None) is not None:
+        translator._corrector = translator._corrector.to(device)
+
     # Handle functional maps specific attributes
     if (
         hasattr(translator, "functional_maps_aligner")
@@ -151,6 +154,21 @@ def get_translators(
             device=device,
             gc_enabled=gc_enabled,
         )
+        for key in [
+            "gc_epochs",
+            "gc_steps_per_epoch",
+            "gc_batch_size",
+            "gc_lr",
+            "gc_weight_decay",
+            "gc_hidden_mult",
+            "gc_dropout",
+            "gc_val_fraction",
+            "gc_tau",
+            "gc_lam",
+            "gc_val_batches",
+        ]:
+            if key in cfg.procrustes:
+                gp_kwargs[key] = cfg.procrustes[key]
         if gc_tau is not None:
             gp_kwargs["gc_tau"] = gc_tau
         if gc_lam is not None:
