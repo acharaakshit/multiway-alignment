@@ -317,18 +317,6 @@ def test_retrieval(
                 f"[{full_to_short_names[encoder]} | Q:{q_cam} -> G:ALL] "
                 f"Rank-1={cmc[0]*100:.2f}%, Rank-5={cmc[4]*100:.2f}%, mAP={mAP*100:.2f}%"
             )
-
-            # results["entries"].append(
-            #     {
-            #         "Model": encoder,
-            #         "Q": q_cam,
-            #         "G": 'ALL',
-            #         "Rank-1": cmc[0] * 100,
-            #         "Rank-5": cmc[4] * 100,
-            #         "mAP": mAP * 100,
-            #         "Method": approach,  # keep track of cc_universe / cc_transform etc.
-            #     }
-            # )
             
     return results
 
@@ -486,9 +474,7 @@ def main(cfg: omegaconf.DictConfig):
         "INITIAL",
     ]
 
-    # disable to avoid doing grid search
-    gc_tau_grid = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
-    gc_lam_grid = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+    
     for method in methods:
         logging.info(f"METHOD: {method}")
         if method in ["GPA_UNIVERSE", "GPA_TRANSFORMED"]:
@@ -533,30 +519,6 @@ def main(cfg: omegaconf.DictConfig):
         for entry in results["entries"]:
             entry["method"] = method
             all_results.append(entry)
-
-    # simple grid search for GCPA
-    for tau in gc_tau_grid:
-        for lam in gc_lam_grid:
-            logging.info(f"GCPA grid search: tau={tau}, lam={lam}")
-            translator_gcpa_grid = get_translators(
-                spaces=cam_spaces,
-                alignment_method="generalised_procrustes",
-                device=device,
-                gc_enabled=True,
-                gc_tau=tau,
-                gc_lam=lam,
-            )
-            results = test_retrieval(
-                translator=translator_gcpa_grid,
-                encoder_names=encoder_names,
-                cam_views=cam_views,
-                cam_spaces=cam_spaces,
-                full_to_short_names=full_to_short_names,
-                approach="GCPA_UNIVERSE",
-            )
-            for entry in results["entries"]:
-                entry["method"] = f"GCPA_UNIVERSE_tau{tau}_lam{lam}"
-                all_results.append(entry)
 
     df_all = pd.DataFrame(all_results)
     out_dir = Path(os.path.join(PROJECT_ROOT, cfg.experiment.output_dir))
