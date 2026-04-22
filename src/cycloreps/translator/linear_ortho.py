@@ -82,11 +82,11 @@ class LinearMultiSpaceTranslator(MultiSpaceBase):
 
     def _to_universe_impl(self, z: torch.Tensor, *, src: str) -> torch.Tensor:
         # map to shared latent via T[src]^T (consistent with your original)
-        return z @ self.T_out[src].T
+        return z @ self.T_out[src].to(z.device, z.dtype).T
 
     def _from_universe_impl(self, u: torch.Tensor, *, tgt: str) -> torch.Tensor:
         # (pseudo-)inverse to return to tgt centred space
-        T_inv = torch.linalg.pinv(self.T_out[tgt])
+        T_inv = torch.linalg.pinv(self.T_out[tgt].to(u.device, u.dtype))
         return u @ T_inv.T
 
     def _pairwise_map_impl(self, src: str, tgt: str) -> torch.Tensor:
@@ -94,7 +94,7 @@ class LinearMultiSpaceTranslator(MultiSpaceBase):
         T_src = self.T_out[src]
         T_tgt = self.T_out[tgt]
         T_tgt_inv = torch.linalg.pinv(T_tgt)
-        return T_src.T @ T_tgt_inv
+        return T_src.T @ T_tgt_inv.T
 
     def align(
         self,
