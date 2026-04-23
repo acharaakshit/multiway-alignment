@@ -15,7 +15,25 @@ from pathlib import Path
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 DATA_DIR = Path(os.environ["DATA_PATH"])
 INSTANCE_IDS_PATH = DATA_DIR / "ted_multi_instance_ids.pkl"
-ds = datasets.load_dataset("neulab/ted_multi")
+
+
+def load_ted_multi():
+    try:
+        return datasets.load_dataset("neulab/ted_multi")
+    except RuntimeError as exc:
+        if "Dataset scripts are no longer supported" not in str(exc):
+            raise
+
+        return datasets.load_dataset(
+            "parquet",
+            data_files={
+                split: f"hf://datasets/neulab/ted_multi/plain_text/ted_multi-{split}*.parquet"
+                for split in ("train", "validation", "test")
+            },
+        )
+
+
+ds = load_ted_multi()
 print(ds["train"][0]["translations"]["language"][4], ds["train"][0]["translations"]["translation"][4])
 print(ds["train"][0]["translations"]["language"][5], ds["train"][0]["translations"]["translation"][5])
 
@@ -167,6 +185,3 @@ for lang, encoder_name in encoder_map.items():
         )
 
         task.run()
-
-
-
