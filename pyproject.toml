@@ -29,6 +29,8 @@ dependencies = [
     "umap-learn>=0.5.9.post2",
     "diffusers>=0.35.1",
     "peft>=0.17.1",
+    "fugashi>=1.5.2",
+    "unidic-lite>=1.0.8",
 ]
 
 [tool.uv.sources]
